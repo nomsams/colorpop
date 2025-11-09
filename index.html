@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ColorPop Pro</title>
+    <style>
+        /* 3. STYLING (CSS) - V2 - Professional Redesign */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+        :root {
+            --ease-1: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --ease-2: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+            
+            /* Light Theme */
+            --bg-light: #F8F9FA;
+            --card-bg-light: #FFFFFF;
+            --text-primary-light: #212529;
+            --text-secondary-light: #6C757D;
+            --border-light: #E9ECEF;
+            --primary-light: #8338EC;
+            --primary-hover-light: #7129d4;
+            --accent-light: #3A86FF;
+        }
+
+        html[data-theme="dark"] {
+            --bg-dark: #121212;
+            --card-bg-dark: #1E1E1E;
+            --text-primary-dark: #E0E0E0;
+            --text-secondary-dark: #A0A0A0;
+            --border-dark: #333333;
+            --primary-dark: #9D4EDD;
+            --primary-hover-dark: #AF6EE5;
+            --accent-dark: #577590;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--bg, var(--bg-light));
+            color: var(--text-primary, var(--text-primary-light));
+            transition: background-color 0.3s var(--ease-1), color 0.3s var(--ease-1);
+        }
+
+        /* Theme Variables Mapping */
+        body {
+            --bg: var(--bg-light);
+            --card-bg: var(--card-bg-light);
+            --text-primary: var(--text-primary-light);
+            --text-secondary: var(--text-secondary-light);
+            --border: var(--border-light);
+            --primary: var(--primary-light);
+            --primary-hover: var(--primary-hover-light);
+            --accent: var(--accent-light);
+        }
+
+        html[data-theme="dark"] body {
+            --bg: var(--bg-dark);
+            --card-bg: var(--card-bg-dark);
+            --text-primary: var(--text-primary-dark);
+            --text-secondary: var(--text-secondary-dark);
+            --border: var(--border-dark);
+            --primary: var(--primary-dark);
+            --primary-hover: var(--primary-hover-dark);
+            --accent: var(--accent-dark);
+        }
+
+        /* Main Layout */
+        .app-header {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .app-header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        .app-header h1 .logo-accent { color: var(--primary); }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2rem;
+            padding: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Controls Panel */
+        .controls-panel {
+            position: sticky;
+            top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            transition: background-color 0.3s var(--ease-1), border 0.3s var(--ease-1);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .control-group label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        /* Buttons */
+        .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+            transition: transform 0.2s var(--ease-1), background-color 0.2s var(--ease-1);
+        }
+        .button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+        .button:active {
+            transform: translateY(0);
+        }
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            background: var(--primary);
+        }
+        .button.secondary {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .button.secondary:hover {
+            background: var(--bg);
+            border-color: var(--text-secondary);
+        }
+
+        /* Custom Radio/Toggle Switches */
+        .segmented-control {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-radius: 8px;
+            background-color: var(--bg);
+            padding: 4px;
+        }
+        .segmented-control input[type="radio"] { display: none; }
+        .segmented-control label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: background-color 0.3s var(--ease-1), color 0.3s var(--ease-1);
+        }
+        .segmented-control input[type="radio"]:checked + label {
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        }
+
+        /* Custom Range Slider */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            cursor: pointer;
+            border-radius: 50%;
+            border: 3px solid var(--card-bg);
+            box-shadow: 0 0 0 2px var(--border);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            cursor: pointer;
+            border-radius: 50%;
+            border: 3px solid var(--card-bg);
+            box-shadow: 0 0 0 2px var(--border);
+        }
+
+        /* Canvas & Display Area */
+        .canvas-display {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .canvas-container {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s var(--ease-1), transform 0.5s var(--ease-1);
+        }
+        .canvas-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .canvas-wrapper { position: relative; }
+        .canvas-wrapper h3 {
+            margin-bottom: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        canvas {
+            border: 1px solid var(--border);
+            background-color: var(--bg);
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+        #inputDisplayContainer canvas {
+            position: absolute; top: 0; left: 0;
+        }
+        #drawingCanvas { z-index: 2; cursor: crosshair; }
+
+        /* Drag and Drop Zone */
+        #dropZone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 4rem 2rem;
+            text-align: center;
+            transition: border-color 0.3s var(--ease-1), background-color 0.3s var(--ease-1);
+        }
+        #dropZone.dragover {
+            border-color: var(--primary);
+            background-color: var(--bg);
+        }
+        #dropZone p {
+            margin: 0 0 1rem 0;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        /* Loading Overlay */
+        #loadingOverlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s var(--ease-1), visibility 0.3s var(--ease-1);
+        }
+        #loadingOverlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #FFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        #loadingOverlay p {
+            color: #FFF;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Theme Toggle */
+        .theme-switch {
+            display: flex;
+            align-items: center;
+        }
+        .theme-switch-checkbox { display: none; }
+        .theme-switch-label {
+            width: 50px;
+            height: 26px;
+            background-color: var(--border);
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .theme-switch-label::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: white;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .theme-switch-checkbox:checked + .theme-switch-label {
+            background-color: var(--primary);
+        }
+        .theme-switch-checkbox:checked + .theme-switch-label::after {
+            transform: translateX(24px);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <h1>ColorPop <span class="logo-accent">Pro</span></h1>
+        <div class="theme-switch">
+            <input type="checkbox" id="themeToggle" class="theme-switch-checkbox">
+            <label for="themeToggle" class="theme-switch-label"></label>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Left Column (Controls Panel) -->
+        <aside class="controls-panel">
+            <div class="card">
+                <div class="control-group">
+                    <label>1. Load Your Image</label>
+                    <button id="uploadButton" class="button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+                        <span>Upload Image</span>
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                </div>
+            </div>
+            <div id="processingControls" class="card" style="display: none;">
+                <div class="control-group">
+                    <label>2. Select Regions</label>
+                    <div class="segmented-control">
+                        <input type="radio" id="pointMode" name="selectionMode" value="point" checked>
+                        <label for="pointMode">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+                            Point
+                        </label>
+                        <input type="radio" id="lassoMode" name="selectionMode" value="lasso">
+                        <label for="lassoMode">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11.83 9.533a.5.5 0 0 0 .17-.375l.028-1.866a.5.5 0 0 0-.32-.478l-1.465-.732a.5.5 0 0 0-.542.14l-.93 1.24a.5.5 0 0 0 .14.678l1.028.771a.5.5 0 0 0 .62-.064zM1.5 1.5A1.5 1.5 0 0 0 0 3v10a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V3a1.5 1.5 0 0 0-1.5-1.5h-13zM1 3a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V3z"/></svg>
+                            Lasso
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label for="toleranceSlider">Edge Tolerance: <span id="toleranceValue">50</span></label>
+                    <input type="range" id="toleranceSlider" min="10" max="150" value="50">
+                </div>
+                <div class="control-group">
+                    <label>Color Enhancement</label>
+                    <div class="segmented-control">
+                        <input type="radio" id="normalColorToggle" name="popColor" value="normal" checked>
+                        <label for="normalColorToggle">Normal</label>
+                        <input type="radio" id="popColorToggle" name="popColor" value="pop">
+                        <label for="popColorToggle">Pop</label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>3. Apply & Download</label>
+                    <button id="applyEffectButton" class="button">Apply Effect</button>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <button id="resetButton" class="button secondary">Reset</button>
+                        <button id="downloadButton" class="button secondary" disabled>Download</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Column (Canvas Display) -->
+        <section class="canvas-display">
+            <div id="dropZone" class="card">
+                <p>Drag & Drop Your Image Here</p>
+                <button id="uploadButtonAlt" class="button secondary">Or Click to Upload</button>
+            </div>
+
+            <div id="inputCanvasContainer" class="canvas-container">
+                <div class="card canvas-wrapper">
+                    <h3>Input Image</h3>
+                    <div id="inputDisplayContainer" style="position: relative;">
+                        <canvas id="inputDisplayCanvas"></canvas>
+                        <canvas id="drawingCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div id="debugCanvasContainer" class="canvas-container">
+                <div class="card canvas-wrapper">
+                    <h3>Debug View</h3>
+                    <canvas id="debugCanvas"></canvas>
+                </div>
+            </div>
+            <div id="outputCanvasContainer" class="canvas-container">
+                <div class="card canvas-wrapper">
+                    <h3>Result</h3>
+                    <canvas id="outputCanvas"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Hidden Source Canvas -->
+    <canvas id="sourceCanvas" style="display: none;"></canvas>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Processing Image...</p>
+    </div>
+
+    <script>
+    // 4. CORE LOGIC (JAVASCRIPT) - V2
+    
+    // 4.1. State Management
+    let imageSrc = null;
+    let tolerance = 50;
+    let selectionPoints = [];
+    let lassoPoints = [];
+    let isProcessing = false;
+    let imageDimensions = { width: 0, height: 0 };
+    let selectionMode = 'point';
+    let isDrawing = false;
+    let popColorEffect = false;
+    let sourceImageData = null;
+
+    // 4.2. DOM Element References
+    const get = (id) => document.getElementById(id);
+    const uploadButton = get('uploadButton');
+    const uploadButtonAlt = get('uploadButtonAlt');
+    const fileInput = get('fileInput');
+    const toleranceSlider = get('toleranceSlider');
+    const toleranceValue = get('toleranceValue');
+    const applyEffectButton = get('applyEffectButton');
+    const resetButton = get('resetButton');
+    const downloadButton = get('downloadButton');
+    const loadingOverlay = get('loadingOverlay');
+    const dropZone = get('dropZone');
+    const processingControls = get('processingControls');
+    
+    const sourceCanvas = get('sourceCanvas');
+    const inputDisplayCanvas = get('inputDisplayCanvas');
+    const drawingCanvas = get('drawingCanvas');
+    const debugCanvas = get('debugCanvas');
+    const outputCanvas = get('outputCanvas');
+
+    const sourceCtx = sourceCanvas.getContext('2d');
+    const inputDisplayCtx = inputDisplayCanvas.getContext('2d');
+    const drawingCtx = drawingCanvas.getContext('2d');
+    const debugCtx = debugCanvas.getContext('2d');
+    const outputCtx = outputCanvas.getContext('2d');
+
+    // --- UI State Management ---
+    function setUIState(state) {
+        switch (state) {
+            case 'initial':
+                dropZone.style.display = 'block';
+                processingControls.style.display = 'none';
+                get('inputCanvasContainer').classList.remove('visible');
+                get('debugCanvasContainer').classList.remove('visible');
+                get('outputCanvasContainer').classList.remove('visible');
+                break;
+            case 'imageLoaded':
+                dropZone.style.display = 'none';
+                processingControls.style.display = 'flex';
+                get('inputCanvasContainer').classList.add('visible');
+                get('debugCanvasContainer').classList.remove('visible');
+                get('outputCanvasContainer').classList.remove('visible');
+                downloadButton.disabled = true;
+                break;
+            case 'processing':
+                loadingOverlay.classList.add('visible');
+                applyEffectButton.disabled = true;
+                resetButton.disabled = true;
+                break;
+            case 'done':
+                loadingOverlay.classList.remove('visible');
+                applyEffectButton.disabled = false;
+                resetButton.disabled = false;
+                downloadButton.disabled = false;
+                get('debugCanvasContainer').classList.add('visible');
+                get('outputCanvasContainer').classList.add('visible');
+                break;
+        }
+    }
+
+    // 4.3. Event Handling
+    document.addEventListener('DOMContentLoaded', () => {
+        // Theme Toggle
+        const themeToggle = get('themeToggle');
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        if (currentTheme === 'dark') themeToggle.checked = true;
+        
+        themeToggle.addEventListener('change', (e) => {
+            const theme = e.target.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        });
+
+        // File Upload
+        [uploadButton, uploadButtonAlt].forEach(btn => btn.addEventListener('click', () => fileInput.click()));
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        // Drag and Drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        // Controls
+        toleranceSlider.addEventListener('input', (e) => {
+            tolerance = parseInt(e.target.value, 10);
+            toleranceValue.textContent = tolerance;
+        });
+
+        document.querySelectorAll('input[name="selectionMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                selectionMode = e.target.value;
+                resetSelections();
+            });
+        });
+        
+        document.querySelectorAll('input[name="popColor"]').forEach(radio => {
+            radio.addEventListener('change', (e) => popColorEffect = e.target.value === 'pop');
+        });
+
+        // Mouse Events on drawingCanvas
+        drawingCanvas.addEventListener('mousedown', handleMouseDown);
+        drawingCanvas.addEventListener('mousemove', handleMouseMove);
+        drawingCanvas.addEventListener('mouseup', handleMouseUp);
+        drawingCanvas.addEventListener('mouseleave', handleMouseUp);
+
+        // Button Clicks
+        applyEffectButton.addEventListener('click', () => {
+            if (!isProcessing && (selectionPoints.length > 0 || lassoPoints.length > 1)) {
+                applyColorSplash();
+            }
+        });
+        resetButton.addEventListener('click', resetSelections);
+        downloadButton.addEventListener('click', downloadResult);
+
+        // Initial UI State
+        setUIState('initial');
+    });
+
+    function handleFile(file) {
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                imageSrc = event.target.result;
+                loadImage();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function loadImage() {
+        const img = new Image();
+        img.onload = () => {
+            imageDimensions.width = img.width;
+            imageDimensions.height = img.height;
+
+            [sourceCanvas, inputDisplayCanvas, drawingCanvas, debugCanvas, outputCanvas].forEach(canvas => {
+                canvas.width = imageDimensions.width;
+                canvas.height = imageDimensions.height;
+            });
+            
+            const inputContainer = get('inputDisplayContainer');
+            const aspectRatio = img.height / img.width;
+            inputContainer.style.height = `${inputDisplayCanvas.getBoundingClientRect().width * aspectRatio}px`;
+
+            sourceCtx.drawImage(img, 0, 0);
+            inputDisplayCtx.drawImage(img, 0, 0);
+            sourceImageData = sourceCtx.getImageData(0, 0, imageDimensions.width, imageDimensions.height);
+
+            resetSelections();
+            setUIState('imageLoaded');
+        };
+        img.src = imageSrc;
+    }
+
+    function getCanvasCoordinates(event) {
+        const rect = drawingCanvas.getBoundingClientRect();
+        const scaleX = drawingCanvas.width / rect.width;
+        const scaleY = drawingCanvas.height / rect.height;
+        return {
+            x: Math.round((event.clientX - rect.left) * scaleX),
+            y: Math.round((event.clientY - rect.top) * scaleY)
+        };
+    }
+
+    function handleMouseDown(e) {
+        if (!imageSrc) return;
+        const { x, y } = getCanvasCoordinates(e);
+        if (selectionMode === 'point') {
+            selectionPoints.push({ x, y });
+            drawSelections();
+        } else if (selectionMode === 'lasso') {
+            isDrawing = true;
+            lassoPoints = [{ x, y }];
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            drawingCtx.beginPath();
+            drawingCtx.moveTo(x, y);
+        }
+    }
+
+    function handleMouseMove(e) {
+        if (!isDrawing || selectionMode !== 'lasso') return;
+        const { x, y } = getCanvasCoordinates(e);
+        lassoPoints.push({ x, y });
+        drawingCtx.lineTo(x, y);
+        drawingCtx.strokeStyle = 'rgba(131, 56, 236, 0.9)';
+        drawingCtx.lineWidth = 3;
+        drawingCtx.stroke();
+    }
+
+    function handleMouseUp() {
+        if (!isDrawing || selectionMode !== 'lasso') return;
+        isDrawing = false;
+        if (lassoPoints.length > 1) {
+            drawingCtx.closePath();
+            drawingCtx.fillStyle = 'rgba(131, 56, 236, 0.3)';
+            drawingCtx.fill();
+            drawingCtx.stroke();
+        }
+    }
+
+    function drawSelections() {
+        drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+        if (selectionMode === 'point') {
+            selectionPoints.forEach(p => {
+                drawingCtx.beginPath();
+                drawingCtx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
+                drawingCtx.fillStyle = 'rgba(131, 56, 236, 0.8)';
+                drawingCtx.fill();
+                drawingCtx.strokeStyle = 'white';
+                drawingCtx.lineWidth = 2;
+                drawingCtx.stroke();
+            });
+        }
+    }
+
+    function resetSelections() {
+        selectionPoints = [];
+        lassoPoints = [];
+        drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+        debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+        outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+        get('debugCanvasContainer').classList.remove('visible');
+        get('outputCanvasContainer').classList.remove('visible');
+        downloadButton.disabled = true;
+    }
+
+    function downloadResult() {
+        const link = document.createElement('a');
+        link.download = 'ColorPop-Pro-Result.png';
+        link.href = outputCanvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // 4.4. Image Processing Algorithm (Unchanged Core Logic)
+    async function applyColorSplash() {
+        setUIState('processing');
+        await new Promise(resolve => setTimeout(resolve, 50)); // Allow UI to update
+
+        const { width, height } = imageDimensions;
+        const data = sourceImageData.data;
+
+        const grayscaleData = new Uint8ClampedArray(width * height);
+        for (let i = 0; i < data.length; i += 4) {
+            grayscaleData[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        }
+
+        let userLassoMask = null;
+        if (selectionMode === 'lasso' && lassoPoints.length > 2) {
+            userLassoMask = new Uint8Array(width * height).fill(0);
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width; tempCanvas.height = height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.beginPath();
+            tempCtx.moveTo(lassoPoints[0].x, lassoPoints[0].y);
+            for (let i = 1; i < lassoPoints.length; i++) tempCtx.lineTo(lassoPoints[i].x, lassoPoints[i].y);
+            tempCtx.closePath();
+            tempCtx.fillStyle = 'white'; tempCtx.fill();
+            const maskData = tempCtx.getImageData(0, 0, width, height).data;
+            for (let i = 0; i < maskData.length; i += 4) if (maskData[i + 3] > 0) userLassoMask[i / 4] = 1;
+        }
+
+        const sobelData = new Float32Array(width * height);
+        const sobelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+        const sobelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                const index = y * width + x;
+                if (selectionMode === 'lasso' && userLassoMask && !userLassoMask[index]) continue;
+                let gx = 0, gy = 0;
+                for (let ky = -1; ky <= 1; ky++) {
+                    for (let kx = -1; kx <= 1; kx++) {
+                        const pixelVal = grayscaleData[(y + ky) * width + (x + kx)];
+                        gx += pixelVal * sobelX[ky + 1][kx + 1];
+                        gy += pixelVal * sobelY[ky + 1][kx + 1];
+                    }
+                }
+                sobelData[index] = Math.sqrt(gx * gx + gy * gy);
+            }
+        }
+
+        const isEdge = (x, y) => (x < 0 || x >= width || y < 0 || y >= height) || sobelData[y * width + x] > tolerance;
+        const finalMask = new Uint8Array(width * height).fill(0);
+        const visited = new Uint8Array(width * height).fill(0);
+
+        const floodFill = (startX, startY) => {
+            const startIndex = startY * width + startX;
+            const startColor = [data[startIndex*4], data[startIndex*4+1], data[startIndex*4+2]];
+            const queue = [[startX, startY]];
+            visited[startIndex] = 1;
+            const internalMask = new Uint8Array(width * height).fill(0);
+            internalMask[startIndex] = 1;
+            while (queue.length > 0) {
+                const [cx, cy] = queue.shift();
+                const neighbors = [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]];
+                for (const [nx, ny] of neighbors) {
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        const nIndex = ny * width + nx;
+                        if (visited[nIndex]) continue;
+                        visited[nIndex] = 1;
+                        if (selectionMode === 'lasso' && userLassoMask && !userLassoMask[nIndex]) continue;
+                        if (isEdge(nx, ny)) continue;
+                        const nColor = [data[nIndex*4], data[nIndex*4+1], data[nIndex*4+2]];
+                        const colorDist = Math.sqrt(Math.pow(startColor[0] - nColor[0], 2) + Math.pow(startColor[1] - nColor[1], 2) + Math.pow(startColor[2] - nColor[2], 2));
+                        if (colorDist > 80) continue;
+                        internalMask[nIndex] = 1;
+                        queue.push([nx, ny]);
+                    }
+                }
+            }
+            for(let i = 0; i < internalMask.length; i++) if(internalMask[i]) finalMask[i] = 1;
+        };
+
+        if (selectionMode === 'point') {
+            selectionPoints.forEach(p => { if (!isEdge(p.x, p.y)) floodFill(p.x, p.y); });
+        } else if (selectionMode === 'lasso') {
+            for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+                const index = y * width + x;
+                if (userLassoMask[index] && !visited[index] && !isEdge(x, y)) floodFill(x, y);
+            }
+        }
+
+        debugCtx.drawImage(sourceCanvas, 0, 0);
+        const debugImageData = debugCtx.getImageData(0, 0, width, height);
+        const debugData = debugImageData.data;
+        for (let i = 0; i < finalMask.length; i++) {
+            const base = i * 4;
+            if (selectionMode === 'lasso' && userLassoMask && userLassoMask[i]) { debugData[base] = Math.min(255, debugData[base] + 50); debugData[base + 2] = Math.min(255, debugData[base + 2] + 100); }
+            if (finalMask[i]) { debugData[base] = Math.min(255, debugData[base] + 150); debugData[base + 1] = Math.min(255, debugData[base + 1] + 80); }
+            if (sobelData[i] > tolerance) { debugData[base] = 0; debugData[base + 1] = 0; debugData[base + 2] = 0; }
+        }
+        debugCtx.putImageData(debugImageData, 0, 0);
+
+        const outputImageData = outputCtx.createImageData(width, height);
+        const outputData = outputImageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            const index = i / 4;
+            if (finalMask[index]) {
+                let r = data[i], g = data[i+1], b = data[i+2];
+                if (popColorEffect) {
+                    let [h, s, l] = rgbToHsl(r, g, b);
+                    s = Math.min(1, s * 1.5); l = Math.min(1, l * 1.1);
+                    [r, g, b] = hslToRgb(h, s, l);
+                }
+                outputData[i] = r; outputData[i + 1] = g; outputData[i + 2] = b; outputData[i + 3] = data[i + 3];
+            } else {
+                const gray = grayscaleData[index];
+                outputData[i] = gray; outputData[i + 1] = gray; outputData[i + 2] = gray; outputData[i + 3] = data[i + 3];
+            }
+        }
+        outputCtx.putImageData(outputImageData, 0, 0);
+
+        setUIState('done');
+    }
+
+    // --- Color Conversion Utilities ---
+    function rgbToHsl(r, g, b) { r /= 255, g /= 255, b /= 255; let max = Math.max(r, g, b), min = Math.min(r, g, b); let h, s, l = (max + min) / 2; if (max == min) { h = s = 0; } else { let d = max - min; s = l > 0.5 ? d / (2 - max - min) : d / (max + min); switch (max) { case r: h = (g - b) / d + (g < b ? 6 : 0); break; case g: h = (b - r) / d + 2; break; case b: h = (r - g) / d + 4; break; } h /= 6; } return [h, s, l]; }
+    function hslToRgb(h, s, l) { let r, g, b; if (s == 0) { r = g = b = l; } else { const hue2rgb = (p, q, t) => { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; }; let q = l < 0.5 ? l * (1 + s) : l + s - l * s; let p = 2 * l - q; r = hue2rgb(p, q, h + 1 / 3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1 / 3); } return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)]; }
+    </script>
+</body>
+</html>
