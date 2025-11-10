@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ColorPop Studio Pro</title>
     <style>
-        /* --- v6.0: Canny Edge Detector & Logging --- */
+        /* --- v6.1: Canny & Visual Debug --- */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
 
@@ -185,7 +185,6 @@
         #spinner-text { margin-top: 1rem; font-weight: 500; color: var(--primary-dark); }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* --- Log Panel --- */
         .log-panel {
             background-color: #2B2B2B;
             color: #A9B7C6;
@@ -216,7 +215,7 @@
             <div class="panel-header">
                 <h1>ColorPop Studio</h1>
                 <p>Advanced selective color editing.</p>
-                <p class="version">v6.0 - Canny Implementation</p>
+                <p class="version">v6.1 - Canny & Visual Debug</p>
             </div>
 
             <div>
@@ -307,7 +306,7 @@
     <canvas id="sourceCanvas" style="display: none;"></canvas>
 
     <script>
-    // --- v6.0: Canny Edge Detector & Logging ---
+    // --- v6.1: Canny & Visual Debug ---
     document.addEventListener('DOMContentLoaded', () => {
         const MAX_DIMENSION = 1920;
         let tolerance = 70;
@@ -338,7 +337,6 @@
             output: outputCanvas.getContext('2d')
         };
 
-        // --- Logging ---
         function log(message, type = 'info') {
             logPanel.style.display = 'block';
             const entry = document.createElement('div');
@@ -350,7 +348,6 @@
         }
         clearLogButton.addEventListener('click', () => logContainer.innerHTML = '');
 
-        // --- Event Handling ---
         [uploadButton, uploadButtonAlt].forEach(btn => btn.addEventListener('click', () => fileInput.click()));
         fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
         uploadPlaceholder.addEventListener('dragover', (e) => { e.preventDefault(); uploadPlaceholder.classList.add('dragover'); });
@@ -367,7 +364,6 @@
         resetButton.addEventListener('click', resetSelections);
         downloadButton.addEventListener('click', downloadResult);
 
-        // --- Core Functions ---
         function handleFile(file) { if (file && file.type.startsWith('image/')) { const reader = new FileReader(); reader.onload = (e) => loadImage(e.target.result); reader.readAsDataURL(file); } }
         function loadImage(imageSrc) {
             log('Loading image...');
@@ -442,7 +438,6 @@
         }
         function downloadResult() { const link = document.createElement('a'); link.download = 'ColorPop-Studio-Result.png'; link.href = outputCanvas.toDataURL('image/png'); link.click(); }
 
-        // --- ALGORITHM ---
         async function applyColorSplash() {
             log('Starting ColorPop process...');
             spinnerOverlay.classList.add('visible');
@@ -452,34 +447,24 @@
             const { width, height } = imageDimensions;
             const data = sourceImageData.data;
 
-            // 1. Canny Edge Detection
             updateSpinner('Detecting Edges...');
             log('Stage 1: Running Canny Edge Detector...');
             await new Promise(resolve => setTimeout(resolve, 50));
             const edgeMap = cannyEdgeDetector(sourceImageData, { highThreshold: tolerance, lowThreshold: tolerance * 0.5 });
             const edgePixelCount = edgeMap.reduce((acc, val) => acc + val, 0);
-            if (edgePixelCount < 50) {
-                log(`Found only ${edgePixelCount} edge pixels. The image may be too blurry or the Edge Sensitivity is too high.`, 'error');
-            } else {
-                log(`Edge detection complete. Found ${edgePixelCount} edge pixels.`, 'success');
-            }
+            if (edgePixelCount < 50) log(`Found only ${edgePixelCount} edge pixels. Try lowering Edge Sensitivity.`, 'warn');
+            else log(`Edge detection complete. Found ${edgePixelCount} edge pixels.`, 'success');
 
-            // 2. Create Lasso Mask
             const userLassoMask = createMaskFromPath(lassoPoints, width, height);
 
-            // 3. Contour Tracing
             updateSpinner('Tracing Object Outline...');
             log('Stage 2: Tracing object contour...');
             await new Promise(resolve => setTimeout(resolve, 50));
             const turtlePath = traceContour(edgeMap, userLassoMask, width, height);
-            if (turtlePath.length < 10) {
-                log('Failed to trace a significant contour. The object might not have clear edges inside the selection.', 'error');
-            } else {
-                log(`Contour traced successfully with ${turtlePath.length} points.`, 'success');
-            }
+            if (turtlePath.length < 10) log('Failed to trace a significant contour. Try a different selection or adjust sensitivity.', 'error');
+            else log(`Contour traced successfully with ${turtlePath.length} points.`, 'success');
             const objectMask = createMaskFromPath(turtlePath, width, height);
 
-            // 4. Color Processing
             updateSpinner('Processing Colors...');
             log('Stage 3: Analyzing and composing final image...');
             await new Promise(resolve => setTimeout(resolve, 50));
@@ -491,7 +476,7 @@
 
             const outputImageData = allContexts.output.createImageData(width, height);
             const outputData = outputImageData.data;
-            const grayscaleData = new Uint8ClampedArray(width * height); // Create grayscale on demand
+            const grayscaleData = new Uint8ClampedArray(width * height);
             for (let i = 0; i < data.length; i += 4) {
                 const index = i / 4;
                 if (objectMask[index]) {
@@ -517,34 +502,59 @@
             }
             allContexts.output.putImageData(outputImageData, 0, 0);
 
-            // 5. Debug View
-            allContexts.debug.drawImage(sourceCanvas, 0, 0);
-            if (turtlePath.length > 0) {
-                const debugCtx = allContexts.debug;
-                debugCtx.strokeStyle = 'rgba(0, 150, 255, 0.8)'; debugCtx.lineWidth = 3;
-                debugCtx.beginPath(); debugCtx.moveTo(turtlePath[0].x, turtlePath[0].y);
-                for(let i = 1; i < turtlePath.length; i++) debugCtx.lineTo(turtlePath[i].x, turtlePath[i].y);
-                debugCtx.stroke();
-            }
+            // *** NEW: Comprehensive Debug Visualization ***
+            drawDebugVisualizations(allContexts.debug, sourceCanvas, userLassoMask, edgeMap, objectMask, turtlePath, width, height);
 
             spinnerOverlay.classList.remove('visible');
             downloadButton.disabled = false;
             log('Process complete.', 'success');
         }
 
-        // --- Algorithm Helpers ---
+        function drawDebugVisualizations(ctx, source, userLassoMask, edgeMap, objectMask, turtlePath, width, height) {
+            ctx.drawImage(source, 0, 0);
+            const debugImageData = ctx.getImageData(0, 0, width, height);
+            const d = debugImageData.data;
+
+            for (let i = 0; i < d.length / 4; i++) {
+                const base = i * 4;
+                // Layer 1: User Lasso (Light Blue)
+                if (userLassoMask[i]) {
+                    d[base] = Math.min(255, d[base] + 30);
+                    d[base + 1] = Math.min(255, d[base + 1] + 60);
+                    d[base + 2] = Math.min(255, d[base + 2] + 90);
+                }
+                // Layer 2: Final Object Mask (Yellow)
+                if (objectMask[i]) {
+                    d[base] = Math.min(255, d[base] + 80);
+                    d[base + 1] = Math.min(255, d[base + 1] + 80);
+                }
+                // Layer 3: Detected Edges (Red)
+                if (edgeMap[i]) {
+                    d[base] = 255; d[base + 1] = 50; d[base + 2] = 50;
+                }
+            }
+            ctx.putImageData(debugImageData, 0, 0);
+
+            // Layer 4: Turtle Path (Bright Blue Line)
+            if (turtlePath.length > 0) {
+                ctx.strokeStyle = 'rgba(0, 150, 255, 1)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(turtlePath[0].x, turtlePath[0].y);
+                for (let i = 1; i < turtlePath.length; i++) {
+                    ctx.lineTo(turtlePath[i].x, turtlePath[i].y);
+                }
+                ctx.stroke();
+            }
+        }
+
         function cannyEdgeDetector(imgData, options) {
             const { width, height, data } = imgData;
             const { highThreshold, lowThreshold, gaussianBlurKernel = 5, gaussianSigma = 1.4 } = options;
-
-            // Grayscale
             const grayscale = new Uint8ClampedArray(width * height);
             for (let i = 0; i < data.length; i += 4) grayscale[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-
-            // Gaussian Blur
             const blurred = new Uint8ClampedArray(width * height);
-            const kernel = [];
-            const k_half = Math.floor(gaussianBlurKernel / 2);
+            const kernel = []; const k_half = Math.floor(gaussianBlurKernel / 2);
             for (let y = 0; y < gaussianBlurKernel; y++) {
                 kernel[y] = [];
                 for (let x = 0; x < gaussianBlurKernel; x++) {
@@ -555,16 +565,12 @@
             for (let y = k_half; y < height - k_half; y++) {
                 for (let x = k_half; x < width - k_half; x++) {
                     let sum = 0;
-                    for (let ky = -k_half; ky <= k_half; ky++) {
-                        for (let kx = -k_half; kx <= k_half; kx++) {
-                            sum += grayscale[(y + ky) * width + (x + kx)] * kernel[ky + k_half][kx + k_half];
-                        }
+                    for (let ky = -k_half; ky <= k_half; ky++) for (let kx = -k_half; kx <= k_half; kx++) {
+                        sum += grayscale[(y + ky) * width + (x + kx)] * kernel[ky + k_half][kx + k_half];
                     }
                     blurred[y * width + x] = sum;
                 }
             }
-
-            // Sobel Operator
             const magnitudes = new Float32Array(width * height);
             const directions = new Float32Array(width * height);
             const sobelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], sobelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
@@ -579,8 +585,6 @@
                     directions[y * width + x] = Math.atan2(gy, gx);
                 }
             }
-
-            // Non-maximum Suppression
             const suppressed = new Float32Array(width * height);
             for (let y = 1; y < height - 1; y++) {
                 for (let x = 1; x < width - 1; x++) {
@@ -595,8 +599,6 @@
                     if (mag >= q && mag >= r) suppressed[i] = mag;
                 }
             }
-
-            // Hysteresis Thresholding
             const edges = new Uint8Array(width * height);
             const strong = 255, weak = 100;
             for (let i = 0; i < suppressed.length; i++) {
@@ -615,8 +617,7 @@
                     }
                 }
             }
-            for(let i = 0; i < edges.length; i++) if(edges[i] !== strong) edges[i] = 0; else edges[i] = 1;
-
+            for(let i = 0; i < edges.length; i++) if(edges[i] === strong) edges[i] = 1; else edges[i] = 0;
             return edges;
         }
 
