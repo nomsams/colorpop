@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ColorPop Studio Pro</title>
     <style>
-        /* --- V5: Advanced Algorithms --- */
+        /* --- V5.1: Stable & Advanced Algorithms --- */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
         :root {
@@ -165,8 +165,8 @@
         .spinner-overlay {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(255,255,255,0.7);
-            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.85);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             border-radius: 0.5rem; opacity: 0; visibility: hidden;
             transition: var(--transition); z-index: 5;
         }
@@ -177,6 +177,11 @@
             border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+        }
+        #spinner-text {
+            margin-top: 1rem;
+            font-weight: 500;
+            color: var(--primary-dark);
         }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -257,7 +262,10 @@
                     <h3>Result</h3>
                     <div class="canvas-wrapper">
                         <canvas id="outputCanvas"></canvas>
-                        <div id="spinnerOverlay" class="spinner-overlay"><div class="spinner"></div></div>
+                        <div id="spinnerOverlay" class="spinner-overlay">
+                            <div class="spinner"></div>
+                            <p id="spinner-text">Processing...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -267,14 +275,14 @@
     <canvas id="sourceCanvas" style="display: none;"></canvas>
 
     <script>
-    // --- V5: Advanced Algorithms & Stability ---
+    // --- V5.1: Stable & Advanced Algorithms ---
     document.addEventListener('DOMContentLoaded', () => {
         const MAX_DIMENSION = 1920;
         let tolerance = 50;
         let selectionPoints = [];
         let lassoPoints = [];
         let imageDimensions = { width: 0, height: 0 };
-        let selectionMode = 'lasso'; // Default to lasso
+        let selectionMode = 'lasso';
         let popColorMode = 'normal';
         let isDrawing = false;
         let sourceImageData = null;
@@ -285,7 +293,7 @@
         const toleranceSlider = get('toleranceSlider'), toleranceValue = get('toleranceValue');
         const applyEffectButton = get('applyEffectButton'), resetButton = get('resetButton'), downloadButton = get('downloadButton');
         const uploadPlaceholder = get('uploadPlaceholder');
-        const debugCard = get('debugCard'), outputCard = get('outputCard'), spinnerOverlay = get('spinnerOverlay');
+        const debugCard = get('debugCard'), outputCard = get('outputCard'), spinnerOverlay = get('spinnerOverlay'), spinnerText = get('spinner-text');
 
         const sourceCanvas = get('sourceCanvas'), inputDisplayCanvas = get('inputDisplayCanvas'), drawingCanvas = get('drawingCanvas');
         const debugCanvas = get('debugCanvas'), outputCanvas = get('outputCanvas');
@@ -389,12 +397,15 @@
         async function applyColorSplash() {
             spinnerOverlay.classList.add('visible');
             [debugCard, outputCard].forEach(c => c.style.display = 'block');
+            
+            const updateSpinner = (text) => spinnerText.textContent = text;
+
+            updateSpinner('Analyzing Edges...');
             await new Promise(resolve => setTimeout(resolve, 50));
 
             const { width, height } = imageDimensions;
             const data = sourceImageData.data;
 
-            // 1. Grayscale & Edge Detection
             const grayscaleData = new Uint8ClampedArray(width * height);
             for (let i = 0; i < data.length; i += 4) grayscaleData[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
             
@@ -411,18 +422,20 @@
             const edgeMap = new Uint8Array(width * height);
             for(let i = 0; i < sobelData.length; i++) if(sobelData[i] > tolerance) edgeMap[i] = 1;
 
-            // 2. Create Lasso Mask
             const userLassoMask = createMaskFromPath(lassoPoints, width, height);
 
-            // 3. NEW: Turtle Contour Tracing
+            updateSpinner('Tracing Object Outline...');
+            await new Promise(resolve => setTimeout(resolve, 50));
+
             const turtlePath = traceContour(edgeMap, userLassoMask, width, height);
             const objectMask = createMaskFromPath(turtlePath, width, height);
 
-            // 4. NEW: Magic Color Analysis
+            updateSpinner('Processing Colors...');
+            await new Promise(resolve => setTimeout(resolve, 50));
+
             let dominantHues = [];
             if (popColorMode === 'magic') dominantHues = findDominantHues(sourceImageData, objectMask);
 
-            // 5. Final Composition
             const outputImageData = allContexts.output.createImageData(width, height);
             const outputData = outputImageData.data;
             for (let i = 0; i < data.length; i += 4) {
@@ -439,7 +452,7 @@
                             const dist = Math.min(Math.abs(h - peak), 360 - Math.abs(h - peak));
                             if (dist < minDist) { minDist = dist; closestPeak = peak; }
                         });
-                        if (minDist < 35) { // Hue distance threshold
+                        if (minDist < 35) {
                             h = closestPeak; s = Math.min(1, s * 1.4);
                         }
                         [r, g, b] = hslToRgb(h, s, l);
@@ -452,19 +465,20 @@
             }
             allContexts.output.putImageData(outputImageData, 0, 0);
 
-            // 6. Debug View
             allContexts.debug.drawImage(sourceCanvas, 0, 0);
-            const debugCtx = allContexts.debug;
-            debugCtx.strokeStyle = 'rgba(0, 150, 255, 0.8)'; debugCtx.lineWidth = 3;
-            debugCtx.beginPath(); debugCtx.moveTo(turtlePath[0].x, turtlePath[0].y);
-            for(let i = 1; i < turtlePath.length; i++) debugCtx.lineTo(turtlePath[i].x, turtlePath[i].y);
-            debugCtx.stroke();
+            if (turtlePath.length > 0) {
+                const debugCtx = allContexts.debug;
+                debugCtx.strokeStyle = 'rgba(0, 150, 255, 0.8)'; debugCtx.lineWidth = 3;
+                debugCtx.beginPath(); debugCtx.moveTo(turtlePath[0].x, turtlePath[0].y);
+                for(let i = 1; i < turtlePath.length; i++) debugCtx.lineTo(turtlePath[i].x, turtlePath[i].y);
+                debugCtx.stroke();
+            }
 
             spinnerOverlay.classList.remove('visible');
             downloadButton.disabled = false;
         }
 
-        // --- New Algorithm Helpers ---
+        // --- Algorithm Helpers ---
         function createMaskFromPath(path, width, height) {
             const mask = new Uint8Array(width * height).fill(0);
             if (path.length < 3) return mask;
@@ -480,23 +494,30 @@
         }
 
         function traceContour(edgeMap, lassoMask, width, height) {
-            const path = [];
             const mooreNeighbors = [[-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1]];
+            
+            // *** ROBUST START POINT FINDER ***
             let startPoint = null;
-            for (let y = 1; y < height - 1; y++) {
-                for (let x = 1; x < width - 1; x++) {
-                    const i = y * width + x;
-                    if (edgeMap[i] && lassoMask[i]) { startPoint = { x, y }; break; }
+            const searchRadius = 10;
+            const lassoStart = lassoPoints[0] || {x: width/2, y: height/2};
+            for (let r = 0; r < Math.max(width, height); r++) {
+                for (let y = Math.max(0, lassoStart.y - r); y <= Math.min(height - 1, lassoStart.y + r); y++) {
+                    for (let x = Math.max(0, lassoStart.x - r); x <= Math.min(width - 1, lassoStart.x + r); x++) {
+                         if (Math.abs(y - lassoStart.y) !== r && Math.abs(x - lassoStart.x) !== r) continue; // Only check perimeter of search box
+                         const i = y * width + x;
+                         if (edgeMap[i] && lassoMask[i]) { startPoint = { x, y }; break; }
+                    }
+                    if (startPoint) break;
                 }
                 if (startPoint) break;
             }
-            if (!startPoint) return [];
+            if (!startPoint) return []; // Return empty if no edge found in lasso
 
-            path.push(startPoint);
+            const path = [startPoint];
             let current = startPoint;
-            let backTrack = { x: current.x - 1, y: current.y }; // Start search from west
+            let backTrack = { x: current.x - 1, y: current.y };
             
-            for (let k = 0; k < width * height; k++) { // Failsafe loop limit
+            for (let k = 0; k < width * height; k++) {
                 const backTrackIndex = mooreNeighbors.findIndex(n => n[0] === backTrack.x - current.x && n[1] === backTrack.y - current.y);
                 let next = null;
                 for (let i = 1; i <= 8; i++) {
@@ -509,7 +530,7 @@
                         break;
                     }
                 }
-                if (current.x === startPoint.x && current.y === startPoint.y) break;
+                if (!next || (current.x === startPoint.x && current.y === startPoint.y)) break;
                 path.push(current);
             }
             return path;
@@ -522,43 +543,28 @@
                 if (mask[i]) {
                     const [r, g, b] = [data[i*4], data[i*4+1], data[i*4+2]];
                     const [h, s, l] = rgbToHsl(r, g, b);
-                    if (s > 0.25 && l > 0.15 && l < 0.85) { // Ignore grays/blacks/whites
-                        hueHistogram[Math.round(h)] += s; // Weight by saturation
-                    }
+                    if (s > 0.25 && l > 0.15 && l < 0.85) hueHistogram[h] += s;
                 }
             }
-            // Smooth histogram
             const smoothed = new Array(360).fill(0);
-            for(let i = 0; i < 360; i++) {
-                for(let j = -5; j <= 5; j++) {
-                    smoothed[i] += hueHistogram[(i + j + 360) % 360];
-                }
-            }
-            // Find top 2 peaks
+            for(let i = 0; i < 360; i++) for(let j = -5; j <= 5; j++) smoothed[i] += hueHistogram[(i + j + 360) % 360];
+            
             const peaks = [];
-            for(let i = 0; i < 360; i++) {
-                const isPeak = smoothed[i] > smoothed[(i - 1 + 360) % 360] && smoothed[i] > smoothed[(i + 1) % 360];
-                if(isPeak) peaks.push({ hue: i, value: smoothed[i] });
-            }
+            for(let i = 0; i < 360; i++) if(smoothed[i] > smoothed[(i - 1 + 360) % 360] && smoothed[i] > smoothed[(i + 1) % 360]) peaks.push({ hue: i, value: smoothed[i] });
+            
             peaks.sort((a, b) => b.value - a.value);
-            // Ensure peaks are distinct
-            if (peaks.length > 1) {
-                const topPeak = peaks[0];
-                const distinctPeaks = [topPeak];
-                for(let i = 1; i < peaks.length; i++) {
-                    const dist = Math.min(Math.abs(peaks[i].hue - topPeak.hue), 360 - Math.abs(peaks[i].hue - topPeak.hue));
-                    if (dist > 40) { // Minimum hue distance between peaks
-                        distinctPeaks.push(peaks[i]);
-                        break;
-                    }
-                }
-                return distinctPeaks.slice(0, 2).map(p => p.hue);
+            if (peaks.length < 2) return peaks.map(p => p.hue);
+
+            const topPeak = peaks[0];
+            const distinctPeaks = [topPeak];
+            for(let i = 1; i < peaks.length; i++) {
+                const dist = Math.min(Math.abs(peaks[i].hue - topPeak.hue), 360 - Math.abs(peaks[i].hue - topPeak.hue));
+                if (dist > 40) { distinctPeaks.push(peaks[i]); break; }
             }
-            return peaks.slice(0, 1).map(p => p.hue);
+            return distinctPeaks.slice(0, 2).map(p => p.hue);
         }
 
-        // --- Color Conversion Utilities ---
-        function rgbToHsl(r, g, b) { r /= 255; g /= 255; b /= 255; let max = Math.max(r, g, b), min = Math.min(r, g, b); let h = 0, s, l = (max + min) / 2; if (max != min) { let d = max - min; s = l > 0.5 ? d / (2 - max - min) : d / (max + min); switch (max) { case r: h = (g - b) / d + (g < b ? 6 : 0); break; case g: h = (b - r) / d + 2; break; case b: h = (r - g) / d + 4; break; } h = Math.round(h * 60); } return [h, s, l]; }
+        function rgbToHsl(r, g, b) { r /= 255; g /= 255; b /= 255; let max = Math.max(r, g, b), min = Math.min(r, g, b); let h = 0, s = 0, l = (max + min) / 2; if (max != min) { let d = max - min; s = l > 0.5 ? d / (2 - max - min) : d / (max + min); switch (max) { case r: h = (g - b) / d + (g < b ? 6 : 0); break; case g: h = (b - r) / d + 2; break; case b: h = (r - g) / d + 4; break; } h = Math.round(h * 60); } return [h, s, l]; }
         function hslToRgb(h, s, l) { let r, g, b; if (s == 0) { r = g = b = l; } else { const hue2rgb = (p, q, t) => { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1/6) return p + (q - p) * 6 * t; if (t < 1/2) return q; if (t < 2/3) return p + (q - p) * (2/3 - t) * 6; return p; }; const q = l < 0.5 ? l * (1 + s) : l + s - l * s; const p = 2 * l - q; r = hue2rgb(p, q, h/360 + 1/3); g = hue2rgb(p, q, h/360); b = hue2rgb(p, q, h/360 - 1/3); } return [Math.round(r*255), Math.round(g*255), Math.round(b*255)]; }
     });
     </script>
