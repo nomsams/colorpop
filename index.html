@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ColorPop Studio</title>
     <style>
-        /* --- V3: Professional Rebuild --- */
+        /* --- V4: Stable & Professional Rebuild --- */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
         :root {
@@ -19,7 +19,6 @@
             --primary-light: #e0cffc;
             --primary-dark: #5a189a;
             --success: #2a9d8f;
-            --danger: #e76f51;
             --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
             --radius: 0.75rem;
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -229,15 +228,15 @@
             grid-template-columns: 1fr;
             gap: 2rem;
             opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
         }
         body.is-loaded .upload-placeholder {
             display: none;
         }
         body.is-loaded .canvas-grid {
             opacity: 1;
-            transform: translateY(0);
+            visibility: visible;
         }
 
         .canvas-card {
@@ -253,17 +252,15 @@
         }
         .canvas-wrapper {
             position: relative;
-            /* This ensures the container has an aspect ratio before the image loads, preventing layout shift */
-            aspect-ratio: 16 / 9;
             background-color: var(--bg);
             border-radius: 0.5rem;
+            /* Aspect ratio is set by JS to match the image */
         }
         .canvas-wrapper canvas {
             position: absolute;
             top: 0; left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain; /* This is key for responsive canvases */
             border-radius: 0.5rem;
         }
         #drawingCanvas { z-index: 2; cursor: crosshair; }
@@ -386,9 +383,10 @@
     <canvas id="sourceCanvas" style="display: none;"></canvas>
 
     <script>
-    // --- V3: Robust JavaScript Logic ---
+    // --- V4: Stable & Robust JavaScript Logic ---
     document.addEventListener('DOMContentLoaded', () => {
-        // --- State Management ---
+        // --- State Management & Constants ---
+        const MAX_DIMENSION = 1920; // Prevents crashes on huge images
         let imageSrc = null;
         let tolerance = 50;
         let selectionPoints = [];
@@ -434,45 +432,20 @@
         [uploadButton, uploadButtonAlt].forEach(btn => btn.addEventListener('click', () => fileInput.click()));
         fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
 
-        // Drag and Drop
-        uploadPlaceholder.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadPlaceholder.classList.add('dragover');
-        });
+        uploadPlaceholder.addEventListener('dragover', (e) => { e.preventDefault(); uploadPlaceholder.classList.add('dragover'); });
         uploadPlaceholder.addEventListener('dragleave', () => uploadPlaceholder.classList.remove('dragover'));
-        uploadPlaceholder.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadPlaceholder.classList.remove('dragover');
-            handleFile(e.dataTransfer.files[0]);
-        });
+        uploadPlaceholder.addEventListener('drop', (e) => { e.preventDefault(); uploadPlaceholder.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
 
-        // Controls
-        toleranceSlider.addEventListener('input', (e) => {
-            tolerance = parseInt(e.target.value, 10);
-            toleranceValue.textContent = tolerance;
-        });
-        document.querySelectorAll('input[name="selectionMode"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                selectionMode = e.target.value;
-                resetSelections();
-            });
-        });
-        document.querySelectorAll('input[name="popColor"]').forEach(radio => {
-            radio.addEventListener('change', (e) => popColorEffect = e.target.value === 'pop');
-        });
+        toleranceSlider.addEventListener('input', (e) => { tolerance = parseInt(e.target.value, 10); toleranceValue.textContent = tolerance; });
+        document.querySelectorAll('input[name="selectionMode"]').forEach(radio => radio.addEventListener('change', (e) => { selectionMode = e.target.value; resetSelections(); }));
+        document.querySelectorAll('input[name="popColor"]').forEach(radio => radio.addEventListener('change', (e) => popColorEffect = e.target.value === 'pop'));
 
-        // Mouse Events on drawingCanvas
         drawingCanvas.addEventListener('mousedown', handleMouseDown);
         drawingCanvas.addEventListener('mousemove', handleMouseMove);
         drawingCanvas.addEventListener('mouseup', handleMouseUp);
         drawingCanvas.addEventListener('mouseleave', handleMouseUp);
 
-        // Button Clicks
-        applyEffectButton.addEventListener('click', () => {
-            if (selectionPoints.length > 0 || lassoPoints.length > 1) {
-                applyColorSplash();
-            }
-        });
+        applyEffectButton.addEventListener('click', () => { if (selectionPoints.length > 0 || lassoPoints.length > 1) applyColorSplash(); });
         resetButton.addEventListener('click', resetSelections);
         downloadButton.addEventListener('click', downloadResult);
 
@@ -480,10 +453,7 @@
         function handleFile(file) {
             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = (event) => {
-                    imageSrc = event.target.result;
-                    loadImage();
-                };
+                reader.onload = (event) => { imageSrc = event.target.result; loadImage(); };
                 reader.readAsDataURL(file);
             }
         }
@@ -491,10 +461,16 @@
         function loadImage() {
             const img = new Image();
             img.onload = () => {
-                imageDimensions = { width: img.width, height: img.height };
-                const aspectRatio = img.height / img.width;
+                // *** CRITICAL FIX: Scale down large images to prevent crashing ***
+                let { width, height } = img;
+                if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+                    const scaleRatio = MAX_DIMENSION / Math.max(width, height);
+                    width = Math.round(width * scaleRatio);
+                    height = Math.round(height * scaleRatio);
+                }
+                imageDimensions = { width, height };
 
-                // Set canvas dimensions
+                // Set canvas buffer sizes to the new, optimized dimensions
                 allCanvases.forEach(canvas => {
                     canvas.width = imageDimensions.width;
                     canvas.height = imageDimensions.height;
@@ -502,13 +478,13 @@
 
                 // Set wrapper aspect ratio to prevent layout shift
                 document.querySelectorAll('.canvas-wrapper').forEach(wrapper => {
-                    wrapper.style.aspectRatio = `${img.width} / ${img.height}`;
+                    wrapper.style.aspectRatio = `${width} / ${height}`;
                 });
 
-                // Draw image
-                allContexts.source.drawImage(img, 0, 0);
-                allContexts.input.drawImage(img, 0, 0);
-                sourceImageData = allContexts.source.getImageData(0, 0, img.width, img.height);
+                // Draw the (potentially scaled) image to the source and input canvases
+                allContexts.source.drawImage(img, 0, 0, width, height);
+                allContexts.input.drawImage(img, 0, 0, width, height);
+                sourceImageData = allContexts.source.getImageData(0, 0, width, height);
 
                 resetSelections();
                 body.classList.add('is-loaded');
